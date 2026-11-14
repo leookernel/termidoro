@@ -19,8 +19,6 @@
 #define COLOR_GREEN "\x1b[32m"
 
 int durationPomo;
-char WPERM = 'w';
-char APERM = 'r';
 
 int main(void);
 
@@ -132,22 +130,6 @@ void configPomodoro(void)
             break;
         }
     } while (placeholder <= 0);
-
-    /*
-    while (placeholder <= 0)
-    {
-        printf("Duration (In minutes): ");
-        scanf("%d", &placeholder);
-        if (placeholder <= 0)
-        {
-            printf("Negative values or 0 is not valid. Try again.\n");
-        }
-        else
-        {
-            durationPomo = placeholder;
-            break;
-        }
-    }*/
 
     saveSettings();
 }
