@@ -2,16 +2,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-// definir Sleep
+// sys
 #ifdef _WIN32
 #include <windows.h>
+#include <direct.h>
 #define SLEEP(s) Sleep((s) * 1000)
+#define CREATE_DIR(path) _mkdir(path)
 #else
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #define SLEEP(s) sleep(s)
+#define CREATE_DIR(path) mkdir(path, 0755)
 #endif
 
-// dfiniciones
 #define COLOR_GREEN "\x1b[32m"
 
 int durationPomo;
@@ -20,9 +24,14 @@ char APERM = 'r';
 
 int main(void);
 
+void initStorage(void)
+{
+    CREATE_DIR("data");
+}
+
 void loadSettings(void)
 {
-    FILE *f = fopen("settings.dat", "r");
+    FILE *f = fopen("data/settings.dat", "r");
 
     if (f == NULL)
     {
@@ -45,7 +54,7 @@ void loadSettings(void)
 
 void saveSettings(void)
 {
-    FILE *f = fopen("settings.dat", "w");
+    FILE *f = fopen("data/settings.dat", "w");
     if (f == NULL)
     {
         return;
@@ -68,7 +77,7 @@ void makeArt(void)
 {
     FILE *file;
     char buffer[256];
-    file = fopen("treeart.txt", "r");
+    file = fopen("assets/treeart.txt", "r");
 
     while (fgets(buffer, sizeof(buffer), file) != NULL)
     {
@@ -147,6 +156,7 @@ int main()
 {
     int choose;
 
+    initStorage();
     loadSettings();
 
     do

@@ -1,1 +1,5 @@
-.dat
+.DS_Store
+*.dat
+*.exe
+*.o
+termidoro
