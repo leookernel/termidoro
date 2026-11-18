@@ -1,3 +1,5 @@
+<img width="866" height="244" alt="imagen" src="https://github.com/user-attachments/assets/268e0820-a651-4737-904b-f72696e6e8ce" />
+
 # Termidoro
 
 A pomodoro timer that runs in your terminal, written in C.
