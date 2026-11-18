@@ -58,6 +58,7 @@ termidoro/
 ├── main.c
 ├── assets/
 │   └── treeart.txt
+│   └── termidoro.txt
 ├── data/ # Created automatically
 │   └── settings.dat # Generated at runtime
 ├── README.md
