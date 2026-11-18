@@ -9,7 +9,7 @@ A pomodoro timer that runs in your terminal, written in C.
 - Terminal-based countdown timer.
 - Customizable Pomodoro duration.
 - Saves your timer between sessions.
-- Lightweight ASCII art cuz I like it :b
+- ASCII art cuz I like it :b
 
 ## Requirements
 
@@ -45,7 +45,7 @@ gcc main.c -o termidoro.exe
 
 When launching Termidoro for the first time:
 
-1. Select Settings to configure your Pomodoro duration.
+1. Select Settings to configure your timer, break time and sessions.
 2. Start Pomodoro to begin your session.
 3. Exit when you're done :D
 
