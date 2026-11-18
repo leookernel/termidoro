@@ -8,19 +8,54 @@
 #include <direct.h>
 #define SLEEP(s) Sleep((s) * 1000)
 #define CREATE_DIR(path) _mkdir(path)
+DWORD oldMode;
+HANDLE hInput;
 #else
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <termios.h>
 #define SLEEP(s) sleep(s)
 #define CREATE_DIR(path) mkdir(path, 0755)
+struct termios oldt, newt;
 #endif
 
 #define COLOR_GREEN "\x1b[32m"
 
 int durationPomo;
+int durationBreak;
+int sessions;
+char errorMessage[] = "Negative values or 0 is not valid. Try again.\n";
 
 int main(void);
+
+void disableTerm(void)
+{
+#ifdef _WIN32
+    hInput = GetStdHandle(STD_INPUT_HANDLE);
+
+    if (GetConsoleMode(hInput, &oldMode))
+    {
+        SetConsoleMode(hInput, oldMode & ~ENABLE_ECHO_INPUT);
+    }
+#else
+    if (tcgetattr(STDIN_FILENO, &oldt) == 0)
+    {
+        newt = oldt;
+        newt.c_lflag &= ~ECHO;
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    }
+#endif
+}
+
+void enableTerm(void)
+{
+#ifdef _WIN32
+    SetConsoleMode(hInput, oldMode);
+#else
+    tcsetattr(STDERR_FILENO, TCSANOW, &oldt);
+#endif
+}
 
 void initStorage(void)
 {
@@ -45,6 +80,14 @@ void loadSettings(void)
         {
             durationPomo = value;
         }
+        else if (strcmp(key, "b") == 0)
+        {
+            durationBreak = value;
+        }
+        else if (strcmp(key, "s") == 0)
+        {
+            sessions = value;
+        }
     }
 
     fclose(f);
@@ -59,6 +102,8 @@ void saveSettings(void)
     }
 
     fprintf(f, "d %d\n", durationPomo);
+    fprintf(f, "b %d\n", durationBreak);
+    fprintf(f, "s %d\n", sessions);
     fclose(f);
 }
 
@@ -71,11 +116,18 @@ void cleanScreen(void)
 #endif
 }
 
-void makeArt(void)
+void makeArt(char art[])
 {
     FILE *file;
     char buffer[256];
-    file = fopen("assets/treeart.txt", "r");
+    if (strcmp(art, "treeart") == 0)
+    {
+        file = fopen("assets/treeart.txt", "r");
+    }
+    else if (strcmp(art, "logoart") == 0)
+    {
+        file = fopen("assets/termidoro.txt", "r");
+    }
 
     while (fgets(buffer, sizeof(buffer), file) != NULL)
     {
@@ -85,19 +137,37 @@ void makeArt(void)
     fclose(file);
 }
 
-void startPomodoro(void)
+static int readInt(const char *prompt)
 {
-    int totalTime = durationPomo * 60;
-    printf("Starting pomodoro...\n");
+    char line[64];
+    int value;
 
-    makeArt();
+    while (1)
+    {
+        printf("%s", prompt);
 
+        if (fgets(line, sizeof(line), stdin) == NULL)
+        {
+            return -1;
+        }
+
+        if (sscanf(line, "%d", &value) == 1 && value > 0)
+        {
+            return value;
+        }
+
+        printf("%s", errorMessage);
+    }
+}
+
+void startTimer(const char *prompt, int totalTime, int count, int sessions)
+{
     while (totalTime >= 0)
     {
         int m = totalTime / 60;
         int s = totalTime % 60;
 
-        printf("\rTime remaining: %02d:%02d", m, s);
+        printf(prompt, count, sessions, m, s);
         fflush(stdout);
 
         if (totalTime == 0)
@@ -108,28 +178,43 @@ void startPomodoro(void)
         SLEEP(1);
         totalTime--;
     }
+}
 
-    printf("\n\nTime's up!\n");
+void startPomodoro(void)
+{
+    int totalPomoTime = durationPomo * 60;
+    int totalBreakTime = durationBreak * 60;
+
+    makeArt("treeart");
+
+    disableTerm();
+
+    int count = 1;
+    while (count < sessions + 1)
+    {
+        startTimer("\rSession: %d/%d - Time remaining: %02d:%02d\033[K", totalPomoTime, count, sessions);
+        startTimer("\rSession: %d/%d - Break remaining: %02d:%02d\033[K", totalBreakTime, count, sessions);
+        count++;
+    }
+
+    enableTerm();
 }
 
 void configPomodoro(void)
 {
-    int placeholder;
+    int value;
 
-    do
-    {
-        printf("Duration (In minutes): ");
-        scanf("%d", &placeholder);
-        if (placeholder <= 0)
-        {
-            printf("Negative values or 0 is not valid. Try again.\n");
-        }
-        else
-        {
-            durationPomo = placeholder;
-            break;
-        }
-    } while (placeholder <= 0);
+    if ((value = readInt("Timer duration (In minutes): ")) <= 0)
+        return;
+    durationPomo = value;
+
+    if ((value = readInt("Break duration (In minutes): ")) <= 0)
+        return;
+    durationBreak = value;
+
+    if ((value = readInt("Sessions: ")) <= 0)
+        return;
+    sessions = value;
 
     saveSettings();
 }
@@ -140,15 +225,22 @@ int main()
 
     initStorage();
     loadSettings();
+    cleanScreen();
+    printf(COLOR_GREEN "");
 
     do
     {
-        printf(COLOR_GREEN "1: Start Pomodoro!\n");
+        makeArt("logoart");
+
+        printf("\n\n1: Start Pomodoro!\n");
         printf("2: Settings\n");
         printf("3: Exit\n");
         printf(": ");
 
         scanf("%d", &choose);
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF)
+            ;
 
         switch (choose)
 
